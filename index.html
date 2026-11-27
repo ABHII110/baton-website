@@ -326,3 +326,69 @@
         </div>
       </div>
     </section>
+
+    <!-- Daily view (bento) ------------------------------------------------->
+    <section class="section" id="daily" data-stream="daily">
+      <div class="container">
+        <header class="section__head">
+          <div>
+            <p class="tag" data-reveal><i></i>daily view</p>
+            <h2 class="h2" data-split>Your <em>Tuesday,</em> at a glance.</h2>
+          </div>
+          <p class="section__lede" data-reveal data-delay="150">The tab people actually keep open: what ran, what is queued, and who still owes an answer.</p>
+        </header>
+
+        <div class="bento">
+          <article class="panel tile tile--week" data-reveal data-anim="week">
+            <div class="tile__head">
+              <span class="tile__label mono">this week / run by run</span>
+              <span class="chip-next mono"><svg><use href="#i-clock" /></svg>next run in <b data-countdown>12:00</b></span>
+            </div>
+            <div class="week">
+              <div class="week__hours mono"><span>09</span><span>11</span><span>13</span><span>15</span></div>
+              <div class="week__grid" data-week></div>
+              <span></span>
+              <div class="week__days mono"><span>mon</span><span class="is-today">tue</span><span>wed</span><span>thu</span><span>fri</span><span>sat</span><span>sun</span></div>
+            </div>
+          </article>
+
+          <article class="panel tile tile--ring" data-reveal data-delay="100">
+            <span class="tile__label mono">hands off</span>
+            <div class="ring">
+              <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring__track" cx="50" cy="50" r="40" /><circle class="ring__glow" cx="50" cy="50" r="40" pathLength="100" /><circle class="ring__bar" cx="50" cy="50" r="40" pathLength="100" /></svg>
+              <span class="ring__num tnum" data-count="80" data-suffix="%">0%</span>
+            </div>
+            <p class="tile__note">of steps finish without a person in the loop</p>
+          </article>
+
+          <article class="panel tile tile--wait" data-reveal>
+            <span class="tile__label mono">waiting on people</span>
+            <div class="avatars" aria-hidden="true">
+              <span style="--h:24">DK</span><span style="--h:96">MS</span><span style="--h:200">AR</span><span style="--h:330">JP</span><span style="--h:150">LT</span>
+            </div>
+            <p class="tile__big"><b class="tnum" data-count="3">0</b><span>approvals open</span></p>
+            <p class="tile__note">Longest wait: 26 minutes, in #finance</p>
+          </article>
+
+          <article class="panel tile tile--fail" data-reveal data-delay="80">
+            <span class="tile__label mono">failures and recoveries</span>
+            <div class="waves" aria-hidden="true">
+              <svg class="waves__svg" viewBox="0 0 600 90" preserveAspectRatio="none"><path class="waves__b" data-wave="1" /><path class="waves__a" data-wave="0" /></svg>
+            </div>
+            <p class="legend mono"><span class="legend__a">recovered</span><span class="legend__b">failed</span></p>
+            <p class="tile__note">96% of failed steps recover on a retry.</p>
+          </article>
+
+          <article class="panel tile tile--map" data-reveal data-delay="160">
+            <span class="tile__label mono">where it ran</span>
+            <div class="map" data-map>
+              <canvas class="map__dots"></canvas>
+              <span class="pin" data-lon="8.7" data-lat="50.1"><i></i><b class="mono">fra 12</b></span>
+              <span class="pin" data-lon="-77.4" data-lat="38.9"><i></i><b class="mono">iad 4</b></span>
+              <span class="pin" data-lon="151.2" data-lat="-33.9"><i></i><b class="mono">syd 2</b></span>
+            </div>
+            <p class="tile__note">Every run stays in the region that started it.</p>
+          </article>
+        </div>
+      </div>
+    </section>
