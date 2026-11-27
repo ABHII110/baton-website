@@ -608,3 +608,40 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
 .plan__list svg { flex: none; width: 14px; height: 14px; color: var(--lime); }
 .plan .btn { margin-top: auto; }
 
+/* ---------- CTA ---------- */
+.cta { position: relative; padding-block: clamp(72px, 10vw, 140px) 36px; }
+.cta__grid { display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.3fr); gap: 16px; }
+.cta__brand { display: flex; flex-direction: column; min-height: 320px; padding: 28px; overflow: hidden; }
+.cta__watermark { position: absolute; right: -36px; top: -6px; width: 230px; height: 230px; color: rgba(255, 255, 255, 0.035); pointer-events: none; }
+.cta__tagline { max-width: 13em; margin-top: auto; font-size: 21px; line-height: 1.3; letter-spacing: -0.025em; }
+.cta__social { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--text-4); }
+.cta__social nav { display: flex; gap: 6px; }
+.cta__social a { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--line-2); color: var(--text-3); font-family: var(--mono); font-size: 11px; transition: color 0.3s, background-color 0.3s, border-color 0.3s; }
+.cta__social a:hover { border-color: var(--lime); background: var(--lime); color: var(--ink); }
+.cta__lime { position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 34px 34px 28px; border-radius: var(--r-lg); background: var(--lime); color: var(--ink); }
+.cta__lime::before { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(rgba(11, 16, 3, 0.16) 1px, transparent 1.4px); background-size: 24px 24px; -webkit-mask-image: linear-gradient(200deg, #000, transparent 70%); mask-image: linear-gradient(200deg, #000, transparent 70%); }
+.cta__kicker { position: relative; color: var(--ink-2); }
+.cta__title { position: relative; margin-top: 12px; font-size: clamp(30px, 3.5vw, 48px); line-height: 1.04; letter-spacing: -0.045em; font-weight: 500; }
+.cta__title em { font-size: 1.1em; letter-spacing: -0.02em; }
+.cta__lime > p { position: relative; max-width: 34em; margin-top: 14px; color: var(--ink-2); font-size: 15px; }
+.signup { position: relative; display: flex; align-items: center; gap: 8px; margin-top: 30px; padding: 5px 5px 5px 20px; border-radius: 999px; background: #f5f9ea; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 12px 30px -14px rgba(11, 16, 3, 0.45); transition: box-shadow 0.3s; }
+.signup:focus-within { box-shadow: 0 0 0 3px rgba(11, 16, 3, 0.2), 0 12px 30px -14px rgba(11, 16, 3, 0.45); }
+.signup.is-error { box-shadow: 0 0 0 2px #8a2b12, 0 12px 30px -14px rgba(11, 16, 3, 0.45); }
+.signup input { flex: 1; min-width: 0; height: 42px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 15px; }
+.signup input::placeholder { color: rgba(11, 16, 3, 0.45); }
+.signup .btn { flex: none; }
+.signup__msg { position: relative; min-height: 1.5em; margin-top: 12px; color: var(--ink-2); }
+
+/* ---------- Footer ---------- */
+.footer { position: relative; z-index: 1; padding-bottom: 30px; }
+.footer__status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; padding: 22px 0; border-bottom: 1px solid var(--line); color: var(--text-3); }
+.footer__status span { display: inline-flex; align-items: center; gap: 8px; }
+.footer__main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 40px; padding: 44px 0; }
+.footer__brand p { max-width: 24em; margin-top: 14px; color: var(--text-3); font-size: 14px; }
+.footer__brand p.mono { color: var(--text-4); font-size: 11.5px; }
+.footer__cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+.footer__cols p { margin-bottom: 12px; color: var(--text-4); }
+.footer__cols a { display: block; padding: 4px 0; color: var(--text-2); font-size: 14px; transition: color 0.25s; }
+.footer__cols a:hover { color: var(--lime); }
+.footer__bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 20px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--text-4); }
+
