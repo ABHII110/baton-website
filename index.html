@@ -438,3 +438,77 @@
         </div>
       </div>
     </section>
+
+    <!-- Pricing ------------------------------------------------------------>
+    <section class="section" id="pricing" data-stream="pricing">
+      <div class="container">
+        <header class="section__head">
+          <div>
+            <p class="tag" data-reveal><i></i>pricing</p>
+            <h2 class="h2" data-split>Pay for runs, <em>not for seats.</em></h2>
+          </div>
+          <p class="section__lede" data-reveal data-delay="150">Invite the whole company on any plan. Nobody should need permission to automate their own job.</p>
+        </header>
+
+        <div class="panel estimator" data-reveal>
+          <div class="estimator__main">
+            <span class="est__label mono">estimate</span>
+            <label class="est__q" for="runsRange">How many runs do you expect a month?</label>
+            <div class="slider" id="slider">
+              <output class="slider__bubble mono" id="runsOut" for="runsRange">20,000 runs</output>
+              <input class="range" id="runsRange" type="range" min="0" max="1000" step="1" value="482" />
+              <div class="slider__ticks mono" aria-hidden="true">
+                <span data-tick="3000">3,000</span><span data-tick="30000">30,000</span><span data-tick="300000">300,000</span>
+              </div>
+            </div>
+          </div>
+          <div class="estimator__side">
+            <span class="est__label mono">your plan</span>
+            <p class="est__plan" id="estPlan">Team</p>
+            <p class="est__price"><b class="tnum" id="estPrice">$89</b><span class="mono">a month</span></p>
+            <p class="est__incl mono" id="estIncl">30,000 runs included</p>
+            <a class="btn btn--lime btn--block" id="estCta" href="#start">Start free</a>
+          </div>
+        </div>
+
+        <div class="plans">
+          <article class="panel plan" data-plan="starter" data-reveal>
+            <span class="plan__name mono">Starter</span>
+            <p class="plan__price tnum">$29</p>
+            <span class="plan__per mono">a month</span>
+            <ul class="plan__list">
+              <li><svg><use href="#i-check" /></svg>3,000 runs a month</li>
+              <li><svg><use href="#i-check" /></svg>10 workflows</li>
+              <li><svg><use href="#i-check" /></svg>7 days of run history</li>
+              <li><svg><use href="#i-check" /></svg>Email support</li>
+            </ul>
+            <a class="btn btn--ghost btn--block" href="#start">Start free</a>
+          </article>
+          <article class="panel plan is-active" data-plan="team" data-reveal data-delay="100">
+            <span class="plan__badge mono">most picked</span>
+            <span class="plan__name mono">Team</span>
+            <p class="plan__price tnum">$89</p>
+            <span class="plan__per mono">a month</span>
+            <ul class="plan__list">
+              <li><svg><use href="#i-check" /></svg>30,000 runs a month</li>
+              <li><svg><use href="#i-check" /></svg>Unlimited workflows</li>
+              <li><svg><use href="#i-check" /></svg>90 days of run history</li>
+              <li><svg><use href="#i-check" /></svg>Slack approvals and code steps</li>
+            </ul>
+            <a class="btn btn--lime btn--block" href="#start">Start free</a>
+          </article>
+          <article class="panel plan" data-plan="scale" data-reveal data-delay="200">
+            <span class="plan__name mono">Scale</span>
+            <p class="plan__price tnum">$290</p>
+            <span class="plan__per mono">a month</span>
+            <ul class="plan__list">
+              <li><svg><use href="#i-check" /></svg>300,000 runs a month</li>
+              <li><svg><use href="#i-check" /></svg>Single sign-on and audit log</li>
+              <li><svg><use href="#i-check" /></svg>1 year of run history</li>
+              <li><svg><use href="#i-check" /></svg>Named engineer, 4 hour response</li>
+            </ul>
+            <a class="btn btn--ghost btn--block" href="#start">Talk to us</a>
+          </article>
+        </div>
+      </div>
+    </section>
