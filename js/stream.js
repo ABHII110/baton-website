@@ -399,3 +399,190 @@ void main() {
     },
   };
 
+  /* WebGL setup ------------------------------------------------------------ */
+  const CTX = { alpha: false, antialias: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' };
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS) && !gl.isContextLost()) throw new Error(gl.getShaderInfoLog(s) || 'shader compile failed');
+    return s;
+  }
+  function program(vs, fs, attribs) {
+    const p = gl.createProgram();
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
+    gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+    attribs.forEach((name, i) => gl.bindAttribLocation(p, i, name));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS) && !gl.isContextLost()) throw new Error(gl.getProgramInfoLog(p) || 'program link failed');
+    const u = {};
+    const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++) {
+      const info = gl.getActiveUniform(p, i);
+      u[info.name.replace(/\[0\]$/, '')] = gl.getUniformLocation(p, info.name);
+    }
+    return { p, u };
+  }
+
+  function makeTarget(w, h, useHalf) {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    if (useHalf) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+    else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    if (!ok) { gl.deleteFramebuffer(fb); gl.deleteTexture(tex); return null; }
+    return { tex, fb, w, h };
+  }
+  function freeTarget(t) { if (t) { gl.deleteFramebuffer(t.fb); gl.deleteTexture(t.tex); } }
+  function makeTargets(w, h) {
+    freeTarget(tA); freeTarget(tB);
+    tA = tB = null;
+    if (halfFloat) {
+      tA = makeTarget(w, h, true);
+      tB = tA && makeTarget(w, h, true);
+      if (!tA || !tB) { freeTarget(tA); freeTarget(tB); halfFloat = false; }
+    }
+    if (!halfFloat) { tA = makeTarget(w, h, false); tB = makeTarget(w, h, false); }
+  }
+
+  function initGL() {
+    gl = canvas.getContext('webgl2', CTX);
+    gl2 = !!gl;
+    if (!gl) gl = canvas.getContext('webgl', CTX) || canvas.getContext('experimental-webgl', CTX);
+    if (!gl) throw new Error('WebGL unavailable');
+    halfFloat = gl2 && !!(gl.getExtension('EXT_color_buffer_float') || gl.getExtension('EXT_color_buffer_half_float'));
+    maxPoint = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)[1] || 64;
+    pRibbon = program(RIBBON_VS, RIBBON_FS, ['a_u', 'a_side', 'a_p1', 'a_p2', 'a_p3', 'a_col']);
+    pSpark = program(SPARK_VS, SPARK_FS, ['a_p1', 'a_p2', 'a_s', 'a_t']);
+    pMote = program(MOTE_VS, MOTE_FS, ['a_m', 'a_ma']);
+    pGlow = program(GLOW_VS, GLOW_FS, ['a_pos']);
+    pBlur = program(QUAD_VS, BLUR_FS, ['a_pos']);
+    pCompose = program(QUAD_VS, COMPOSE_FS, ['a_pos']);
+    vboRibbon = gl.createBuffer();
+    iboRibbon = gl.createBuffer();
+    vboSpark = gl.createBuffer();
+    vboMote = gl.createBuffer();
+    vboQuad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vboQuad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.CULL_FACE);
+    enabledAttribs = 0;
+    tA = tB = null;
+    built = false;
+    W = 0;
+    resize();
+    ready = true;
+  }
+
+  /* Geometry: built once, bent on the GPU ---------------------------------- */
+  function buildScene() {
+    S = small ? 96 : 128;
+    N = small ? 48 : 96;
+    G = Math.round(N / 3);
+    const alphaScale = (small ? 44 : 78) / N;
+    const ribbons = [
+      // [p1], [p2 (.w = alpha)], [p3 = lineWidth, cool, widthIsFractionOfSpread, fraction], colour
+      { p1: [0, 0, 0, 0], p2: [0, 0, 0, 0.2], p3: [0, 0, 1, 1.15], col: rgb([140, 210, 80]) },  // ribbon body
+      { p1: [0, 0, 0, 0], p2: [0, 0, 0, 0.29], p3: [18, 1, 0, 0], col: rgb([90, 190, 200]) },  // cool vein
+      { p1: [0, 0, 0, 0], p2: [0, 0, 0, 0.4], p3: [10, 0, 0, 0], col: rgb([205, 246, 120]) },  // bright core
+    ];
+    const strands = [];
+    for (let i = 0; i < N; i++) {
+      const r = Math.pow(Math.random(), 0.75);
+      const roll = Math.random();
+      let col = 'lime';
+      if (r < 0.45 && roll < 0.42) col = roll < 0.2 ? 'blue' : 'teal';
+      else if (roll < 0.12) col = 'pale';
+      else if (roll < 0.36) col = 'green';
+      const st = {
+        p1: [0.12 + r * 0.95, rand(0, TAU), rand(0.12, 0.32) * (Math.random() < 0.5 ? -1 : 1), rand(0.03, 0.15)],
+        p2: [rand(0.6, 2.2), rand(0.2, 0.7), rand(0, TAU), rand(0.16, 0.6) * alphaScale],
+        p3: [Math.random() < 0.1 ? rand(1.5, 2.3) : rand(0.55, 1.25), col === 'blue' || col === 'teal' ? 1 : 0, 0, 0],
+        col: rgb(PALETTE[col]),
+      };
+      strands.push(st);
+      ribbons.push(st);
+    }
+
+    const R = ribbons.length;
+    const vd = new Float32Array(R * S * 2 * 17);
+    let o = 0;
+    for (let k = 0; k < R; k++) {
+      const rb = ribbons[k];
+      for (let i = 0; i < S; i++) {
+        const u = i / (S - 1);
+        for (let side = -1; side <= 1; side += 2) {
+          vd[o++] = u; vd[o++] = side;
+          vd.set(rb.p1, o); o += 4;
+          vd.set(rb.p2, o); o += 4;
+          vd.set(rb.p3, o); o += 4;
+          vd.set(rb.col, o); o += 3;
+        }
+      }
+    }
+    IPR = (S - 1) * 6;
+    const id = new Uint16Array(R * IPR);
+    let q = 0;
+    for (let k = 0; k < R; k++) {
+      const b = k * S * 2;
+      for (let i = 0; i < S - 1; i++) {
+        const v = b + i * 2;
+        id[q++] = v; id[q++] = v + 1; id[q++] = v + 2;
+        id[q++] = v + 1; id[q++] = v + 3; id[q++] = v + 2;
+      }
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, vboRibbon);
+    gl.bufferData(gl.ARRAY_BUFFER, vd, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboRibbon);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, id, gl.STATIC_DRAW);
+
+    nSparks = small ? 110 : 240;
+    const sd = new Float32Array(nSparks * 14);
+    o = 0;
+    for (let i = 0; i < nSparks; i++) {
+      const st = strands[(Math.random() * N) | 0];
+      sd.set(st.p1, o); o += 4;
+      sd.set(st.p2, o); o += 4;
+      sd[o++] = Math.random(); sd[o++] = rand(0.012, 0.05); sd[o++] = rand(-0.35, 0.35); sd[o++] = rand(0.6, 1.9);
+      sd[o++] = rand(1.4, 4); sd[o++] = rand(0, TAU);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, vboSpark);
+    gl.bufferData(gl.ARRAY_BUFFER, sd, gl.STATIC_DRAW);
+
+    nMotes = small ? 6 : 12;
+    const md = new Float32Array(nMotes * 5);
+    o = 0;
+    for (let i = 0; i < nMotes; i++) {
+      md[o++] = Math.random(); md[o++] = rand(0.004, 0.012);
+      md[o++] = rand(1.3, 2.8) * (Math.random() < 0.5 ? -1 : 1); md[o++] = rand(4, 15);
+      md[o++] = rand(0.05, 0.14);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, vboMote);
+    gl.bufferData(gl.ARRAY_BUFFER, md, gl.STATIC_DRAW);
+  }
+
+  const L_RIBBON = [[1, 0], [1, 1], [4, 2], [4, 6], [4, 10], [3, 14]];
+  const L_SPARK = [[4, 0], [4, 4], [4, 8], [2, 12]];
+  const L_MOTE = [[4, 0], [1, 4]];
+  const L_QUAD = [[2, 0]];
+  function attribs(buffer, stride, spec) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    for (let i = 0; i < spec.length; i++) {
+      gl.enableVertexAttribArray(i);
+      gl.vertexAttribPointer(i, spec[i][0], gl.FLOAT, false, stride * 4, spec[i][1] * 4);
+    }
+    for (let i = spec.length; i < enabledAttribs; i++) gl.disableVertexAttribArray(i);
+    enabledAttribs = spec.length;
+  }
+
