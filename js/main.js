@@ -280,3 +280,170 @@
     $$('[data-reveal], [data-split], [data-type], [data-count], [data-roll], [data-anim]').forEach((el) => io.observe(el));
   }
 
+  /* 5. Hero: glass tilt + the live refund flow ------------------------------- */
+  function initGlass() {
+    const glass = $('#glass'), hero = $('.hero');
+    if (!glass || reduce) return;
+    let inView = true, heroH = hero.offsetHeight || 1;
+    new IntersectionObserver(([en]) => { inView = en.isIntersecting; }).observe(hero);
+    window.addEventListener('resize', () => { heroH = hero.offsetHeight || 1; });
+    if (finePointer) {
+      let raf = 0, tx = 0, ty = 0, lx = '', ly = '';
+      window.addEventListener('pointermove', (e) => {
+        if (!inView) return;
+        tx = (e.clientX / window.innerWidth) * 2 - 1;
+        ty = (e.clientY / window.innerHeight) * 2 - 1;
+        if (!raf) raf = requestAnimationFrame(() => {
+          raf = 0;
+          const x = tx.toFixed(2), y = ty.toFixed(2);
+          if (x !== lx) { glass.style.setProperty('--tx', x); lx = x; }
+          if (y !== ly) { glass.style.setProperty('--ty', y); ly = y; }
+        });
+      }, { passive: true });
+    }
+    let sraf = 0, lastSp = '';
+    const onScroll = () => {
+      if (sraf) return;
+      sraf = requestAnimationFrame(() => {
+        sraf = 0;
+        const sp = clamp(window.scrollY / heroH).toFixed(3);
+        if (sp !== lastSp) { glass.style.setProperty('--sp', sp); lastSp = sp; }
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  function initFlow() {
+    const flow = $('#flow');
+    if (!flow) return;
+    const svg = $('#flowEdges');
+    const nodes = {};
+    $$('.node', flow).forEach((n) => { nodes[n.dataset.node] = n; });
+    const labels = {};
+    $$('[data-edge-label]', flow).forEach((l) => { labels[l.dataset.edgeLabel] = l; });
+    const chip = $('#flowChip');
+    const askStatus = $('#askStatus'), logStatus = $('#logStatus');
+    const runs = $('#runs');
+    const EDGES = [['trigger', 'cond'], ['cond', 'ask'], ['cond', 'log']];
+    const LAYOUT = {
+      wide: { trigger: [0.13, 0.5], cond: [0.46, 0.5], ask: [0.83, 0.2], log: [0.83, 0.8] },
+      tall: { trigger: [0.5, 0.09], cond: [0.5, 0.42], ask: [0.25, 0.86], log: [0.75, 0.86] },
+    };
+
+    function layout() {
+      const w = flow.clientWidth, h = flow.clientHeight;
+      if (!w || !h) return;
+      const mode = w < 470 ? 'tall' : 'wide';
+      flow.dataset.mode = mode;
+      const L = LAYOUT[mode];
+      const box = {};
+      Object.keys(nodes).forEach((k) => {
+        const el = nodes[k];
+        const nw = el.offsetWidth, nh = el.offsetHeight;
+        const x = Math.round(clamp(L[k][0] * w - nw / 2, 0, w - nw));
+        const y = Math.round(clamp(L[k][1] * h - nh / 2, 0, h - nh));
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        box[k] = { x, y, w: nw, h: nh };
+      });
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      let html = '';
+      EDGES.forEach(([a, b]) => {
+        const A = box[a], B = box[b];
+        let p1, p2, d;
+        if (mode === 'wide') {
+          p1 = [A.x + A.w, A.y + A.h / 2];
+          p2 = [B.x, B.y + B.h / 2];
+          const dx = (p2[0] - p1[0]) * 0.55;
+          d = `M${p1[0]},${p1[1]} C${p1[0] + dx},${p1[1]} ${p2[0] - dx},${p2[1]} ${p2[0]},${p2[1]}`;
+        } else {
+          p1 = [A.x + A.w / 2, A.y + A.h];
+          p2 = [B.x + B.w / 2, B.y];
+          const dy = (p2[1] - p1[1]) * 0.55;
+          d = `M${p1[0]},${p1[1]} C${p1[0]},${p1[1] + dy} ${p2[0]},${p2[1] - dy} ${p2[0]},${p2[1]}`;
+        }
+        const id = `${a}-${b}`;
+        html += `<path class="edge" data-edge="${id}" d="${d}"/><path class="edge-glow" data-pulse="${id}" d="${d}" pathLength="1"/><path class="edge-pulse" data-pulse="${id}" d="${d}" pathLength="1"/>`;
+        html += `<circle class="port" cx="${p1[0]}" cy="${p1[1]}" r="3"/><circle class="port" cx="${p2[0]}" cy="${p2[1]}" r="3"/>`;
+        const lab = labels[id];
+        if (lab) { lab.style.left = `${(p1[0] + p2[0]) / 2}px`; lab.style.top = `${(p1[1] + p2[1]) / 2}px`; }
+      });
+      svg.innerHTML = html;
+      if (chip) {
+        const A = box.ask;
+        chip.hidden = mode === 'tall';
+        chip.style.left = `${A.x}px`;
+        chip.style.top = `${A.y + A.h + 10}px`;
+      }
+    }
+    layout();
+    if ('ResizeObserver' in window) new ResizeObserver(layout).observe(flow);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+
+    const pulse = (id, dur = 700) => {
+      const ps = svg.querySelectorAll(`[data-pulse="${id}"]`);
+      const e = svg.querySelector(`[data-edge="${id}"]`);
+      if (e) e.classList.add('is-lit');
+      if (!ps.length || !ps[0].animate || reduce) return sleep(dur);
+      return Promise.all(Array.from(ps, (p) => p.animate(
+        [{ strokeDashoffset: 0.26 }, { strokeDashoffset: -1.02 }],
+        { duration: dur, easing: 'cubic-bezier(.45,0,.2,1)' }
+      ).finished.catch(() => {})));
+    };
+    const reset = () => {
+      Object.values(nodes).forEach((n) => n.classList.remove('is-active', 'is-done'));
+      Object.values(labels).forEach((l) => l.classList.remove('is-lit'));
+      $$('.edge', svg).forEach((e) => e.classList.remove('is-lit'));
+      askStatus.textContent = 'waiting on a yes';
+      logStatus.textContent = 'postgres';
+    };
+    const pad = (n) => String(n).padStart(2, '0');
+    const now = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+    const addRun = (name, dur) => {
+      const li = document.createElement('li');
+      li.className = 'is-new';
+      li.innerHTML = `<i></i><time class="mono">${now()}</time><span class="mono">${name}</span><span class="runs__dur mono">${dur}</span>`;
+      runs.prepend(li);
+      requestAnimationFrame(() => requestAnimationFrame(() => li.classList.remove('is-new')));
+      setTimeout(() => { while (runs.children.length > 3) runs.lastElementChild.remove(); }, 700);
+    };
+
+    if (reduce) { nodes.trigger.classList.add('is-done'); nodes.cond.classList.add('is-done'); nodes.ask.classList.add('is-active'); return; }
+
+    let n = 0, order = 4472;
+    const hero = $('.hero');
+    (async () => {
+      while (!document.body.classList.contains('hero-in')) await sleep(200);
+      await sleep(1400);
+      loopWhileVisible(hero, async () => {
+        reset();
+        const big = n % 3 !== 2;
+        n += 1;
+        nodes.trigger.classList.add('is-active');
+        await sleep(650);
+        await pulse('trigger-cond');
+        nodes.trigger.classList.replace('is-active', 'is-done');
+        nodes.cond.classList.add('is-active');
+        await sleep(550);
+        const id = big ? 'cond-ask' : 'cond-log';
+        labels[id].classList.add('is-lit');
+        await pulse(id);
+        nodes.cond.classList.replace('is-active', 'is-done');
+        const target = big ? nodes.ask : nodes.log;
+        target.classList.add('is-active');
+        if (big) {
+          await sleep(1700);
+          askStatus.textContent = 'approved by Dana';
+        } else {
+          logStatus.textContent = 'writing...';
+          await sleep(900);
+          logStatus.textContent = '12 rows written';
+        }
+        target.classList.replace('is-active', 'is-done');
+        order += 1;
+        addRun(`refund #${order}`, big ? `${18 + Math.floor(Math.random() * 30)} s` : `${96 + Math.floor(Math.random() * 90)} ms`);
+        await sleep(1900);
+      });
+    })();
+  }
+
