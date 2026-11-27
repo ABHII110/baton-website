@@ -182,3 +182,101 @@
     });
   }
 
+  /* 4. Reveal system: fade-ups, split words, typewriter, counters ----------- */
+  function splitWords(el) {
+    const nodes = Array.from(el.childNodes);
+    el.textContent = '';
+    let i = 0;
+    const word = (text, tpl) => {
+      const w = document.createElement('span');
+      w.className = 'w';
+      w.style.setProperty('--wi', i++);
+      if (tpl) { const c = tpl.cloneNode(false); c.textContent = text; w.appendChild(c); }
+      else w.textContent = text;
+      el.appendChild(w);
+    };
+    nodes.forEach((n) => {
+      if (n.nodeType === 1 && n.tagName === 'BR') { el.appendChild(n); return; }
+      const tpl = n.nodeType === 1 ? n : null;
+      (n.textContent || '').split(/(\s+)/).forEach((part) => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) el.appendChild(document.createTextNode(' '));
+        else word(part, tpl);
+      });
+    });
+  }
+
+  function typeIt(el) {
+    const full = el.dataset.full || el.textContent.trim();
+    el.dataset.full = full;
+    if (reduce) { el.textContent = full; return; }
+    el.style.minHeight = `${el.offsetHeight}px`;
+    el.textContent = '';
+    el.classList.add('is-typing');
+    let i = 0;
+    const step = () => {
+      i += 1;
+      el.textContent = full.slice(0, i);
+      if (i < full.length) setTimeout(step, 18 + Math.random() * 38);
+      else setTimeout(() => el.classList.remove('is-typing'), 1400);
+    };
+    setTimeout(step, 300);
+  }
+
+  function countUp(el) {
+    const to = parseFloat(el.dataset.count);
+    const dec = parseInt(el.dataset.decimals || '0', 10);
+    const pre = el.dataset.prefix || '', suf = el.dataset.suffix || '';
+    const f = new Intl.NumberFormat('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    if (reduce) { el.textContent = pre + f.format(to) + suf; return; }
+    tween(parseInt(el.dataset.duration || '2000', 10), (e) => { el.textContent = pre + f.format(to * e) + suf; }, ease.outExpo);
+  }
+
+  function initRoll(el) {
+    const txt = el.textContent.trim();
+    el.textContent = '';
+    el.setAttribute('aria-label', txt);
+    Array.from(txt).forEach((ch, idx) => {
+      if (!/\d/.test(ch)) { el.append(ch); return; }
+      const col = document.createElement('span');
+      col.className = 'roll';
+      col.setAttribute('aria-hidden', 'true');
+      const inner = document.createElement('span');
+      inner.className = 'roll__in';
+      for (let k = 0; k < 20; k++) { const s = document.createElement('span'); s.textContent = String(k % 10); inner.append(s); }
+      inner.style.setProperty('--to', String(10 + Number(ch)));
+      inner.style.transitionDelay = `${idx * 110}ms`;
+      col.append(inner);
+      el.append(col);
+    });
+  }
+
+  const ANIMS = {};
+  function reveal(el) {
+    if (el.classList.contains('is-in')) return;
+    el.classList.add('is-in');
+    if (el.hasAttribute('data-reveal') && !reduce && el.animate) {
+      el.animate(
+        [{ opacity: 0, transform: 'translateY(28px)' }, { opacity: 1, transform: 'translateY(0)' }],
+        { duration: 1100, delay: parseFloat(el.dataset.delay || '0'), easing: EASE_CSS, fill: 'backwards' }
+      );
+    }
+    if (el.hasAttribute('data-type')) typeIt(el);
+    if (el.hasAttribute('data-count')) countUp(el);
+    const a = el.dataset.anim;
+    if (a && ANIMS[a]) ANIMS[a](el);
+  }
+
+  function initReveal() {
+    $$('[data-split]').forEach(splitWords);
+    $$('[data-roll]').forEach(initRoll);
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        io.unobserve(en.target);
+        reveal(en.target);
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -6% 0px' });
+    $$('[data-reveal], [data-split], [data-type], [data-count], [data-roll], [data-anim]').forEach((el) => io.observe(el));
+  }
+
