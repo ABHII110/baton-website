@@ -708,3 +708,125 @@ void main() {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
+  /* One frame --------------------------------------------------------------- */
+  function draw(time) {
+    const ip = 1 - Math.pow(1 - introP, 3);
+    const I = cur.intensity * ip;
+    const f = cur.focus, de = 1 - f;
+    const reveal = ip * 1.1;
+    const hdr = halfFloat ? 1 : 0.5; // headroom when the glow buffer is 8-bit
+    const gs = tA.w / W;
+    setControlPoints();
+
+    // 1. glow -> tA (quarter resolution)
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, tA.fb);
+    gl.viewport(0, 0, tA.w, tA.h);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    if (I > 0.002) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE);
+      gl.useProgram(pRibbon.p);
+      setSpine(pRibbon, time);
+      const ru = pRibbon.u;
+      gl.uniform1f(ru.u_scale, gs);
+      gl.uniform1f(ru.u_reveal, reveal);
+      gl.uniform1f(ru.u_cool, cur.cool);
+      gl.uniform1f(ru.u_sigma, 1.25);
+      gl.uniform1f(ru.u_fsig, 1.25);
+      gl.uniform2f(ru.u_res, tA.w, tA.h);
+      gl.uniform1f(ru.u_vig, 0);
+      attribs(vboRibbon, 17, L_RIBBON);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboRibbon);
+      gl.uniform1f(ru.u_alpha, I * hdr);
+      gl.drawElements(gl.TRIANGLES, 3 * IPR, gl.UNSIGNED_SHORT, 0);
+      gl.uniform1f(ru.u_alpha, 0.28 * I * hdr);
+      gl.drawElements(gl.TRIANGLES, G * IPR, gl.UNSIGNED_SHORT, 3 * IPR * 2);
+
+      // light where the bundle pinches
+      let best = Infinity, bx = 0, by = 0;
+      const uMax = Math.min(1, reveal);
+      for (let i = 0; i <= 48; i++) {
+        evalSpine((i / 48) * uMax, tmp3);
+        if (tmp3[2] < best) { best = tmp3[2]; bx = tmp3[0]; by = tmp3[1]; }
+      }
+      const pinch = clamp(1 - Math.max(best, unit * 0.006) / (unit * 0.05), 0, 1);
+      if (pinch > 0.01) {
+        gl.useProgram(pGlow.p);
+        attribs(vboQuad, 2, L_QUAD);
+        gl.uniform2f(pGlow.u.u_pt, bx, by);
+        gl.uniform2f(pGlow.u.u_view, W, H);
+        gl.uniform1f(pGlow.u.u_size, Math.min(maxPoint, unit * 0.34 * gs));
+        gl.uniform1f(pGlow.u.u_a, 0.6 * I * pinch * hdr);
+        gl.drawArrays(gl.POINTS, 0, 1);
+      }
+      gl.disable(gl.BLEND);
+    }
+
+    // 2. blur the glow: ~10px (bloom) in focus, ~48px out of focus
+    gl.useProgram(pBlur.p);
+    attribs(vboQuad, 2, L_QUAD);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.uniform1i(pBlur.u.u_tex, 0);
+    gl.uniform1f(pBlur.u.u_dither, halfFloat ? 0 : 1 / 255);
+    const sig = (10 + de * 38) * gs;
+    if (sig <= 3.2) blurPass(sig / 1.414);
+    else { blurPass(sig * 0.45); blurPass(sig * 0.6); }
+
+    // 3. compose background + glow on screen
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.useProgram(pCompose.p);
+    gl.bindTexture(gl.TEXTURE_2D, tA.tex);
+    const cu = pCompose.u;
+    gl.uniform1i(cu.u_tex, 0);
+    gl.uniform1f(cu.u_gain, (0.78 + 0.22 * de) / hdr);
+    gl.uniform1f(cu.u_sat, 1.15);
+    gl.uniform3f(cu.u_bg, BG[0], BG[1], BG[2]);
+    gl.uniform2f(cu.u_res, canvas.width, canvas.height);
+    gl.uniform1f(cu.u_vig, 0.55);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    // 4. sharp strands, sparks and motes on top
+    const sharpA = smooth((f - 0.04) / 0.9) * I;
+    if (sharpA > 0.003) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE);
+      gl.useProgram(pRibbon.p);
+      const ru = pRibbon.u;
+      gl.uniform1f(ru.u_scale, scale);
+      gl.uniform1f(ru.u_sigma, 0);
+      gl.uniform1f(ru.u_fsig, 0);
+      gl.uniform2f(ru.u_res, canvas.width, canvas.height);
+      gl.uniform1f(ru.u_vig, 0.55);
+      gl.uniform1f(ru.u_alpha, sharpA);
+      attribs(vboRibbon, 17, L_RIBBON);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iboRibbon);
+      gl.drawElements(gl.TRIANGLES, N * IPR, gl.UNSIGNED_SHORT, 3 * IPR * 2);
+
+      gl.useProgram(pSpark.p);
+      setSpine(pSpark, time);
+      gl.uniform1f(pSpark.u.u_scale, scale);
+      gl.uniform1f(pSpark.u.u_reveal, reveal);
+      gl.uniform1f(pSpark.u.u_alpha, sharpA);
+      gl.uniform3f(pSpark.u.u_col, 232 / 255, 1, 182 / 255);
+      gl.uniform2f(pSpark.u.u_res, canvas.width, canvas.height);
+      gl.uniform1f(pSpark.u.u_vig, 0.55);
+      attribs(vboSpark, 14, L_SPARK);
+      gl.drawArrays(gl.POINTS, 0, nSparks);
+
+      gl.useProgram(pMote.p);
+      setSpine(pMote, time);
+      gl.uniform1f(pMote.u.u_scale, scale);
+      gl.uniform1f(pMote.u.u_reveal, reveal);
+      gl.uniform1f(pMote.u.u_alpha, sharpA);
+      gl.uniform3f(pMote.u.u_col, 210 / 255, 250 / 255, 120 / 255);
+      gl.uniform2f(pMote.u.u_res, canvas.width, canvas.height);
+      gl.uniform1f(pMote.u.u_vig, 0.55);
+      attribs(vboMote, 5, L_MOTE);
+      gl.drawArrays(gl.POINTS, 0, nMotes);
+      gl.disable(gl.BLEND);
+    }
+  }
+
