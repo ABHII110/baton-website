@@ -888,3 +888,38 @@
     update(false);
   }
 
+  /* 12. Signup form (front-end only, wire it to your backend) --------------------- */
+  function initSignup() {
+    const form = $('#signup');
+    if (!form) return;
+    const input = $('#email', form), msg = $('#signupMsg');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const v = input.value.trim();
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+      form.classList.toggle('is-error', !ok);
+      if (!ok) { msg.textContent = 'That email looks off. Try name@company.com'; input.focus(); return; }
+      msg.textContent = "You're in. Check your inbox for a setup link.";
+      input.value = '';
+      input.blur();
+    });
+    input.addEventListener('input', () => { form.classList.remove('is-error'); msg.textContent = ''; });
+  }
+
+  /* Boot ----------------------------------------------------------------------------- */
+  $$('[data-year]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
+  initNav();
+  initButtons();
+  initWeek();
+  initWaves();
+  initStats();
+  initMap();
+  initPricing();
+  initSignup();
+  initPlate();
+  initGlass();
+  initFlow();
+  initApps();
+  initReveal();
+  runLoader();
+})();
