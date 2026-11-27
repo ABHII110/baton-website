@@ -586,3 +586,125 @@ void main() {
     enabledAttribs = spec.length;
   }
 
+  /* Sizing ------------------------------------------------------------------ */
+  function resize() {
+    if (!gl) return;
+    const cw = wrap.clientWidth, ch = wrap.clientHeight;
+    if (!cw || !ch) return;
+    const nextSmall = cw < 720;
+    const dpr = window.devicePixelRatio || 1;
+    const maxPx = (nextSmall ? 2.4e6 : 4.2e6) * budgetScale;
+    const sc = Math.max(Math.min(1, dpr), Math.min(dpr, 2, Math.sqrt(maxPx / (cw * ch))));
+    const bw = Math.round(cw * sc), bh = Math.round(ch * sc);
+    if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+    W = cw; H = ch; unit = Math.sqrt(W * H); scale = bw / cw;
+    const gw = Math.max(8, Math.round(cw / 4)), gh = Math.max(8, Math.round(ch / 4));
+    if (!tA || tA.w !== gw || tA.h !== gh) makeTargets(gw, gh);
+    if (!built || nextSmall !== small) { small = nextSmall; buildScene(); built = true; }
+    measure();
+    if (reduce) requestStatic();
+  }
+
+  function measure() {
+    const y = window.scrollY;
+    sections = Array.from(document.querySelectorAll('[data-stream]'))
+      .map((el) => { const r = el.getBoundingClientRect(); return { kf: KF[el.dataset.stream], top: r.top + y, bottom: r.bottom + y }; })
+      .filter((s) => s.kf && s.bottom > s.top)
+      .sort((a, b) => a.top - b.top);
+  }
+
+  /* Scroll -> keyframe blend (allocation-free) ----------------------------- */
+  function pointsFor(sec, s, vh, out) {
+    const src = small && sec.kf.m ? sec.kf.m : sec.kf.pts;
+    const mid = (sec.top + sec.bottom) / 2;
+    const d = clamp((-(s - mid) / vh) * sec.kf.drift, -0.7, 0.7);
+    for (let i = 0; i < 5; i++) { out[i][0] = src[i][0]; out[i][1] = src[i][1] + d; out[i][2] = src[i][2]; }
+  }
+
+  function computeTarget() {
+    const n = sections.length;
+    if (!n) return false;
+    const vh = window.innerHeight;
+    const s = window.scrollY + vh * 0.5;
+    let k = n - 1;
+    for (let i = 0; i < n; i++) { if (s < sections[i].bottom) { k = i; break; } }
+    const T = vh * 0.45;
+    const sec = sections[k];
+    let a = k, b = k, f = 0;
+    if (k > 0 && s < sec.top + T) { a = k - 1; f = smooth((s - (sec.top - T)) / (2 * T)); }
+    else if (k < n - 1 && s > sec.bottom - T) { b = k + 1; f = smooth((s - (sec.bottom - T)) / (2 * T)); }
+    const A = sections[a], B = sections[b];
+    pointsFor(A, s, vh, pa);
+    pointsFor(B, s, vh, pb);
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 3; j++) tgt.pts[i][j] = lerp(pa[i][j], pb[i][j], f);
+    tgt.focus = lerp(A.kf.focus, B.kf.focus, f);
+    tgt.intensity = lerp(A.kf.intensity, B.kf.intensity, f);
+    tgt.cool = lerp(A.kf.cool, B.kf.cool, f);
+    tgt.twist = lerp(A.kf.twist, B.kf.twist, f);
+    return true;
+  }
+
+  function approach(k) {
+    if (!cur.pts) {
+      cur.pts = tgt.pts.map((p) => p.slice());
+      cur.focus = tgt.focus; cur.intensity = tgt.intensity; cur.cool = tgt.cool; cur.twist = tgt.twist;
+      return;
+    }
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 3; j++) cur.pts[i][j] = lerp(cur.pts[i][j], tgt.pts[i][j], k);
+    cur.focus = lerp(cur.focus, tgt.focus, k);
+    cur.intensity = lerp(cur.intensity, tgt.intensity, k);
+    cur.cool = lerp(cur.cool, tgt.cool, k);
+    cur.twist = lerp(cur.twist, tgt.twist, k);
+  }
+
+  /* Spline control points (CSS px) + CPU copy of the spine for the pinch -- */
+  function setControlPoints() {
+    const ox = (mouse.sx - 0.5) * W * 0.035, oy = (mouse.sy - 0.5) * H * 0.03;
+    const useMouse = !small && !reduce;
+    for (let i = 0; i < 5; i++) {
+      let x = cur.pts[i][0] * W, y = cur.pts[i][1] * H;
+      if (useMouse && i > 0 && i < 4) { const w = i === 2 ? 1 : 0.55; x += ox * w; y += oy * w; }
+      CP[(i + 1) * 3] = x; CP[(i + 1) * 3 + 1] = y; CP[(i + 1) * 3 + 2] = cur.pts[i][2] * unit;
+    }
+    CP[0] = 2 * CP[3] - CP[6]; CP[1] = 2 * CP[4] - CP[7]; CP[2] = CP[5];
+    CP[18] = 2 * CP[15] - CP[12]; CP[19] = 2 * CP[16] - CP[13]; CP[20] = CP[17];
+  }
+  function evalSpine(u, out) {
+    const s = clamp(u, 0, 1) * 4;
+    const seg = Math.min(3, Math.floor(s));
+    const t = s - seg;
+    for (let k = 0; k < 3; k++) {
+      const p0 = CP[seg * 3 + k], p1 = CP[(seg + 1) * 3 + k], p2 = CP[(seg + 2) * 3 + k], p3 = CP[(seg + 3) * 3 + k];
+      const a = 2 * p0 - 5 * p1 + 4 * p2 - p3, b = 3 * p1 - p0 - 3 * p2 + p3, c = p2 - p0;
+      out[k] = 0.5 * (2 * p1 + c * t + a * t * t + b * t * t * t);
+    }
+  }
+
+  function setSpine(P, time) {
+    const u = P.u;
+    gl.uniform3f(u.u_c0, CP[0], CP[1], CP[2]);
+    gl.uniform3f(u.u_c1, CP[3], CP[4], CP[5]);
+    gl.uniform3f(u.u_c2, CP[6], CP[7], CP[8]);
+    gl.uniform3f(u.u_c3, CP[9], CP[10], CP[11]);
+    gl.uniform3f(u.u_c4, CP[12], CP[13], CP[14]);
+    gl.uniform3f(u.u_c5, CP[15], CP[16], CP[17]);
+    gl.uniform3f(u.u_c6, CP[18], CP[19], CP[20]);
+    gl.uniform1f(u.u_minSpread, unit * 0.006);
+    gl.uniform1f(u.u_time, time);
+    gl.uniform1f(u.u_twist, cur.twist * Math.PI);
+    gl.uniform2f(u.u_view, W, H);
+  }
+
+  function blurPass(step) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, tB.fb);
+    gl.viewport(0, 0, tB.w, tB.h);
+    gl.bindTexture(gl.TEXTURE_2D, tA.tex);
+    gl.uniform2f(pBlur.u.u_dir, step / tA.w, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, tA.fb);
+    gl.viewport(0, 0, tA.w, tA.h);
+    gl.bindTexture(gl.TEXTURE_2D, tB.tex);
+    gl.uniform2f(pBlur.u.u_dir, 0, step / tA.h);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
