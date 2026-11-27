@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Baton — every handoff, handled</title>
+  <meta name="description" content="Baton runs the steps between your apps and only taps a person on the shoulder when the call is actually theirs." />
+  <meta name="theme-color" content="#050605" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@0;1&display=swap" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>
+    document.documentElement.classList.add('js', 'is-loading');
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  </script>
+</head>
+<body>
+
+  <!-- Icon sprite --------------------------------------------------------->
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="glyph" viewBox="0 0 24 24">
+      <path d="M6.5 16.5c5.5 0 5.5-9 11-9" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+      <circle cx="6.5" cy="16.5" r="2.6" fill="currentColor" />
+      <circle cx="17.5" cy="7.5" r="2.6" fill="currentColor" />
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.8v8.4a.6.6 0 0 0 .92.5l6.5-4.2a.6.6 0 0 0 0-1L5.92 3.3A.6.6 0 0 0 5 3.8Z" fill="currentColor" /></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+    <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="1.4" /><path d="M8 5.2v3l2 1.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" /></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4" /><path d="M5.5 7V5.4a2.5 2.5 0 0 1 5 0V7" fill="none" stroke="currentColor" stroke-width="1.4" /></symbol>
+    <symbol id="i-cursor" viewBox="0 0 16 16"><path d="m4 3 8.4 4.2-3.6 1.1L7.6 12 4 3Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" /></symbol>
+    <symbol id="i-redo" viewBox="0 0 16 16"><path d="M12 6.5H6.3a2.7 2.7 0 0 0 0 5.4H9M12 6.5 9.6 4M12 6.5 9.6 9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+    <symbol id="i-code" viewBox="0 0 16 16"><path d="M6 4.5 2.8 8 6 11.5M10 4.5 13.2 8 10 11.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+  </svg>
+
+  <!-- Preloader: a lime ring counts the page in, then folds into the logo -->
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader__ring" id="loaderRing">
+      <svg viewBox="0 0 120 120"><circle class="loader__track" cx="60" cy="60" r="54" /><circle class="loader__bar" id="loaderBar" cx="60" cy="60" r="54" pathLength="100" /></svg>
+      <span class="loader__count" id="loaderCount">000</span>
+    </div>
+    <div class="loader__lime" id="loaderLime"></div>
+    <div class="loader__glyph" id="loaderGlyph"><svg><use href="#glyph" /></svg></div>
+  </div>
+
+  <!-- The stream of light that runs the whole length of the page -->
+  <div class="stream" id="stream" aria-hidden="true">
+    <canvas class="stream__gl" id="streamGL"></canvas>
+  </div>
+
+  <a class="skip mono" href="#main">skip to content</a>
