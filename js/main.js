@@ -803,3 +803,88 @@
     if ('ResizeObserver' in window) new ResizeObserver(draw).observe(wrap);
   }
 
+  /* 10. Numbers ------------------------------------------------------------------ */
+  function initStats() {
+    const spark = $('[data-spark]');
+    if (spark) {
+      const rnd = mulberry32(11);
+      const N = 18, W = 260;
+      const pts = [];
+      for (let i = 0; i < N; i++) {
+        const base = 50 - 38 * Math.pow(i / (N - 1), 1.2);
+        pts.push([(i / (N - 1)) * W, clamp(base + (rnd() - 0.5) * 12, 6, 60)]);
+      }
+      pts[N - 1][1] = 10;
+      const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+      spark.innerHTML = `<defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c2f249" stop-opacity=".28"/><stop offset="1" stop-color="#c2f249" stop-opacity="0"/></linearGradient></defs>
+        <path class="spark__area" d="${line} L${W},64 L0,64 Z"/>
+        <path class="spark__glow" d="${line}" pathLength="1"/>
+        <path class="spark__line" d="${line}" pathLength="1"/>
+        <circle class="spark__dot" cx="${W}" cy="10" r="3.2"/>`;
+    }
+    const bars = $('[data-bars]');
+    if (bars) {
+      let html = '';
+      for (let i = 0; i < 16; i++) {
+        const dim = i > 10;
+        const h = dim ? 0.18 + (15 - i) * 0.04 : 1 - i * 0.035;
+        html += `<i class="${dim ? 'is-dim' : ''}" style="--h:${h.toFixed(3)};--i:${i}"></i>`;
+      }
+      bars.innerHTML = html;
+    }
+  }
+
+  /* 11. Pricing estimator ---------------------------------------------------------- */
+  function initPricing() {
+    const input = $('#runsRange');
+    if (!input) return;
+    const slider = $('#slider'), out = $('#runsOut');
+    const planEl = $('#estPlan'), priceEl = $('#estPrice'), inclEl = $('#estIncl'), cta = $('#estCta');
+    const MIN = 1000, MAX = 500000;
+    const toRuns = (v) => MIN * Math.pow(MAX / MIN, v / 1000);
+    const toVal = (runs) => (Math.log(runs / MIN) / Math.log(MAX / MIN)) * 1000;
+    const nice = (n) => (n < 10000 ? Math.round(n / 100) * 100 : n < 100000 ? Math.round(n / 1000) * 1000 : Math.round(n / 5000) * 5000);
+    const PLANS = {
+      starter: { name: 'Starter', price: 29, incl: 3000 },
+      team: { name: 'Team', price: 89, incl: 30000 },
+      scale: { name: 'Scale', price: 290, incl: 300000 },
+    };
+    const ticks = $$('[data-tick]', slider);
+    ticks.forEach((t) => t.style.setProperty('--t', (toVal(Number(t.dataset.tick)) / 1000).toFixed(4)));
+    let current = '';
+    const update = (animate) => {
+      const v = Number(input.value);
+      const pn = v / 1000;
+      const runs = nice(toRuns(v));
+      slider.style.setProperty('--pn', pn.toFixed(4));
+      input.style.setProperty('--p', `${(pn * 100).toFixed(2)}%`);
+      out.textContent = `${fmt.format(runs)} runs`;
+      input.setAttribute('aria-valuetext', `${fmt.format(runs)} runs a month`);
+      const key = runs <= 3000 ? 'starter' : runs <= 30000 ? 'team' : 'scale';
+      const plan = PLANS[key];
+      ticks.forEach((t) => t.classList.toggle('is-on', Number(t.dataset.tick) === plan.incl));
+      const over = runs > plan.incl;
+      inclEl.textContent = over ? `${fmt.format(runs)} runs, let's size it together` : `${fmt.format(plan.incl)} runs included`;
+      cta.textContent = over ? 'Talk to us' : 'Start free';
+      if (key === current) return;
+      current = key;
+      planEl.textContent = plan.name;
+      priceEl.textContent = `$${plan.price}`;
+      if (animate && !reduce) {
+        [planEl, priceEl].forEach((el) => el.animate(
+          [{ opacity: 0, transform: 'translateY(10px)', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', filter: 'none' }],
+          { duration: 480, easing: EASE_CSS }
+        ));
+      }
+      $$('.plan').forEach((p) => {
+        const on = p.dataset.plan === key;
+        p.classList.toggle('is-active', on);
+        const b = $('.btn', p);
+        b.classList.toggle('btn--lime', on);
+        b.classList.toggle('btn--ghost', !on);
+      });
+    };
+    input.addEventListener('input', () => update(true));
+    update(false);
+  }
+
