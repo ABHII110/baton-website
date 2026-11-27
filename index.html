@@ -158,3 +158,104 @@
         </ol>
       </div>
     </section>
+
+    <!-- The problem + features --------------------------------------------->
+    <section class="section how" id="how" data-stream="glue">
+      <div class="container">
+        <header class="section__head">
+          <div>
+            <p class="tag" data-reveal><i></i>the problem</p>
+            <h2 class="h2" data-split>Half of every process is <em>busywork.</em></h2>
+          </div>
+          <p class="section__lede" data-reveal data-delay="150">Copy this row over there. Check that it landed. Ask Priya if it looks right. Baton takes the busywork and leaves you the decisions.</p>
+        </header>
+
+        <div class="features">
+          <!-- 01 -->
+          <article class="feature">
+            <div class="feature__text" data-reveal>
+              <span class="feature__num mono" data-roll>01</span>
+              <h3>Draw it once, branch it anywhere</h3>
+              <p>Drop in a trigger, add a condition, fork the path. A step that fails at 3 a.m. is retried four times before anyone wakes up.</p>
+            </div>
+            <div class="panel trace" data-reveal data-delay="120" data-anim="trace">
+              <div class="panel__head">
+                <span class="mono">run 41982</span>
+                <span class="trace__status mono" data-trace-status>running</span>
+              </div>
+              <div class="trace__rows">
+                <div class="trace__row" data-start="0" data-dur="118"><span class="trace__icon"><svg><use href="#i-check" /></svg></span><span class="trace__name mono">fetch refund</span><span class="trace__track"><span class="trace__bar"></span></span><span class="trace__ms mono">-</span></div>
+                <div class="trace__row" data-start="118" data-dur="6"><span class="trace__icon"><svg><use href="#i-check" /></svg></span><span class="trace__name mono">check amount</span><span class="trace__track"><span class="trace__bar"></span></span><span class="trace__ms mono">-</span></div>
+                <div class="trace__row" data-start="124" data-dur="1"><span class="trace__icon"><svg><use href="#i-check" /></svg></span><span class="trace__name mono">if over 5k</span><span class="trace__track"><span class="trace__bar"></span></span><span class="trace__ms mono">-</span></div>
+                <div class="trace__row" data-start="125" data-wait><span class="trace__icon"><svg><use href="#i-check" /></svg></span><span class="trace__name mono">ask finance</span><span class="trace__track"><span class="trace__bar"></span></span><span class="trace__ms mono">-</span></div>
+              </div>
+              <div class="trace__axis mono" aria-hidden="true"><span></span><span></span><span class="trace__ticks"><span>0</span><span>50</span><span>100</span><span>150</span><span>200 ms</span></span><span></span></div>
+            </div>
+          </article>
+
+          <!-- 02 -->
+          <article class="feature feature--flip">
+            <div class="feature__text" data-reveal>
+              <span class="feature__num mono" data-roll>02</span>
+              <h3>Approvals where your team already talks</h3>
+              <p>Send a step to Slack, collect a yes or a no, and keep moving. Nobody has to learn another dashboard.</p>
+            </div>
+            <div class="panel chat" data-reveal data-delay="120" data-anim="chat">
+              <div class="panel__head">
+                <span class="chat__chan"><span>#</span>finance</span>
+                <span class="mono">today</span>
+              </div>
+              <div class="chat__body">
+                <div class="msg" data-step="1"><div class="msg__in">
+                  <span class="avatar avatar--bot"><svg><use href="#glyph" /></svg></span>
+                  <div class="msg__main">
+                    <p class="msg__meta"><b>Baton</b><span class="badge mono">app</span><time>09:41</time></p>
+                    <p>Refund of <b>€5,400</b> on order #4471 needs a yes.</p>
+                    <div class="msg__card">
+                      <dl>
+                        <dt>customer</dt><dd>Northwind GmbH</dd>
+                        <dt>reason</dt><dd>damaged in transit</dd>
+                      </dl>
+                      <div class="msg__actions">
+                        <span class="mini-btn" data-approve><svg><use href="#i-check" /></svg><span>Approve</span></span>
+                        <span class="mini-btn">Decline</span>
+                      </div>
+                    </div>
+                  </div>
+                </div></div>
+                <div class="msg" data-step="2"><div class="msg__in">
+                  <span class="avatar" style="--h:24">DK</span>
+                  <span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>
+                </div></div>
+                <div class="msg" data-step="3"><div class="msg__in">
+                  <span class="avatar" style="--h:24">DK</span>
+                  <div class="msg__main">
+                    <p class="msg__meta"><b>Dana K.</b><time>09:41</time></p>
+                    <p>Approved. They've been patient, send it today.</p>
+                  </div>
+                </div></div>
+                <div class="msg msg--sys" data-step="4"><div class="msg__in">
+                  <span class="sys-line mono"><svg><use href="#i-check" /></svg>approved in 26 s / refund sent / logged</span>
+                </div></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 03 -->
+          <article class="feature">
+            <div class="feature__text" data-reveal>
+              <span class="feature__num mono" data-roll>03</span>
+              <h3>Every run leaves a receipt</h3>
+              <p>Inputs, outputs and timings, kept for 90 days. Replay any run before you trust it with real money.</p>
+            </div>
+            <div class="panel iso" data-reveal data-delay="120" data-anim="iso">
+              <div class="panel__head">
+                <span class="mono">runs per weekday</span>
+                <span class="mono iso__avg">62,000 average</span>
+              </div>
+              <svg class="iso__svg" viewBox="0 0 560 250" role="img" aria-label="Runs per weekday, rising from Monday to a Friday peak, with a quiet Saturday."></svg>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
