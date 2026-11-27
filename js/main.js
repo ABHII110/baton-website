@@ -588,3 +588,84 @@
     requestAnimationFrame(tick);
   };
 
+  /* 8. The lime plate: opens out of the logo, folds back into it -------------- */
+  function initPlate() {
+    const sec = $('#plate'), card = $('#plateCard'), glyph = $('#plateGlyph'), title = $('#plateTitle');
+    if (!sec || !card || !glyph || !title) return;
+    const label = $('.plate__label', sec);
+
+    // split the headline into words we can drive with scroll
+    const nodes = Array.from(title.childNodes);
+    title.textContent = '';
+    nodes.forEach((n) => {
+      const tpl = n.nodeType === 1 ? n : null;
+      (n.textContent || '').split(/(\s+)/).forEach((part) => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { title.appendChild(document.createTextNode(' ')); return; }
+        const w = document.createElement('span');
+        w.className = 'pw';
+        if (tpl) { const c = tpl.cloneNode(false); c.textContent = part; w.appendChild(c); } else w.textContent = part;
+        title.appendChild(w);
+      });
+    });
+    const words = $$('.pw', title);
+
+    if (reduce) { sec.classList.add('plate--static'); card.style.clipPath = 'none'; return; }
+
+    let ticking = false, active = true, lastClip = '', lastDots = '', lastLabel = '';
+    const update = () => {
+      ticking = false;
+      if (!active) return;
+      const vh = window.innerHeight;
+      const r = sec.getBoundingClientRect();
+      const total = sec.offsetHeight - vh * 0.4;
+      const p = clamp((vh * 0.6 - r.top) / total);
+      const cw = card.offsetWidth, ch = card.offsetHeight;
+      const gx = glyph.offsetLeft + glyph.offsetWidth / 2;
+      const gy = glyph.offsetTop + glyph.offsetHeight / 2;
+      const L = 136 * ease.outCubic(clamp(p / 0.1));
+
+      let e;
+      if (p < 0.12) e = 0;
+      else if (p < 0.38) e = ease.inOutCubic((p - 0.12) / 0.26);
+      else if (p < 0.7) e = 1;
+      else if (p < 0.86) e = 1 - ease.inOutCubic((p - 0.7) / 0.16);
+      else e = 0;
+
+      const t = lerp(gy - L / 2, 0, e);
+      const l = lerp(gx - L / 2, 0, e);
+      const rr = lerp(cw - (gx + L / 2), 0, e);
+      const b = lerp(ch - (gy + L / 2), 0, e);
+      const rad = lerp(L * 0.3, cw < 600 ? 28 : 40, e);
+      const clip = `inset(${t.toFixed(1)}px ${rr.toFixed(1)}px ${b.toFixed(1)}px ${l.toFixed(1)}px round ${rad.toFixed(1)}px)`;
+      if (clip !== lastClip) { card.style.clipPath = clip; lastClip = clip; }
+      const dots = e.toFixed(3);
+      if (dots !== lastDots) { card.style.setProperty('--dots', dots); lastDots = dots; }
+
+      const textAlpha = Math.min(clamp((e - 0.55) / 0.45), 1 - clamp((p - 0.66) / 0.05));
+      const la = textAlpha.toFixed(3);
+      if (label && la !== lastLabel) { label.style.opacity = la; lastLabel = la; }
+      const q = clamp((p - 0.28) / 0.3);
+      const n = words.length;
+      words.forEach((w, i) => {
+        const wp = clamp((q * (n + 2) - i) / 2);
+        const op = (textAlpha * (0.14 + 0.86 * wp)).toFixed(3);
+        const bl = wp < 0.999 && textAlpha > 0.001 ? `blur(${((1 - wp) * 7).toFixed(1)}px)` : 'none';
+        const tr = `translateY(${((1 - wp) * 0.22).toFixed(3)}em)`;
+        // only touch the DOM when something actually changed
+        if (w._op !== op) { w.style.opacity = op; w._op = op; }
+        if (w._bl !== bl) { w.style.filter = bl; w._bl = bl; }
+        if (w._tr !== tr) { w.style.transform = tr; w._tr = tr; }
+      });
+    };
+    const onScroll = () => { if (active && !ticking) { ticking = true; requestAnimationFrame(update); } };
+    // only do layout reads while the plate is near the screen
+    new IntersectionObserver(([en]) => {
+      active = en.isIntersecting;
+      if (active) onScroll();
+    }, { rootMargin: '60% 0px 60% 0px' }).observe(sec);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', () => { lastClip = ''; onScroll(); });
+    update();
+  }
+
