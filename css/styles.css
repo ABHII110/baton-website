@@ -167,3 +167,23 @@ em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spa
 .mark--sm { width: 22px; height: 22px; border-radius: 7px; }
 .mark--sm svg { width: 14px; height: 14px; }
 
+/* ---------- Nav ---------- */
+.nav { position: fixed; inset: 0 0 auto; z-index: 50; border-bottom: 1px solid transparent; transition: background-color 0.5s var(--ease), border-color 0.5s, opacity 0.9s var(--ease); }
+.is-loading .nav { opacity: 0; }
+.hero-in .nav { opacity: 1; }
+.nav.is-scrolled, .nav.is-open { background: rgba(5, 6, 5, 0.8); border-bottom-color: var(--line); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.nav__inner { position: relative; height: var(--nav-h); display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.nav__links { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 32px; font-size: 13.5px; color: var(--text-2); }
+.nav__links a { position: relative; transition: color 0.25s; }
+.nav__links a:hover { color: var(--text); }
+.nav__actions { display: flex; align-items: center; gap: 10px; }
+.status { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); background: rgba(10, 12, 9, 0.6); color: var(--text-2); white-space: nowrap; }
+.nav__burger { display: none; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line-2); place-items: center; align-content: center; gap: 5px; }
+.nav__burger span { display: block; width: 16px; height: 1.5px; border-radius: 2px; background: var(--text); transition: transform 0.35s var(--ease); }
+.nav.is-open .nav__burger span:first-child { transform: translateY(3.25px) rotate(45deg); }
+.nav.is-open .nav__burger span:last-child { transform: translateY(-3.25px) rotate(-45deg); }
+.mobile-menu { display: none; }
+.nav.is-open .mobile-menu { display: grid; gap: 2px; padding: 8px var(--gutter) 22px; border-top: 1px solid var(--line); }
+.mobile-menu a { padding: 12px 0; font-size: 22px; letter-spacing: -0.03em; border-bottom: 1px solid var(--line); }
+.mobile-menu .status { justify-self: start; margin-top: 16px; }
+
