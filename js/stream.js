@@ -342,3 +342,60 @@ void main() {
 }
 `;
 
+  /* State ------------------------------------------------------------------ */
+  let gl = null, gl2 = false, ready = false, halfFloat = false, maxPoint = 64;
+  let pRibbon, pSpark, pMote, pGlow, pBlur, pCompose;
+  let vboRibbon, iboRibbon, vboSpark, vboMote, vboQuad;
+  let tA = null, tB = null;
+  let enabledAttribs = 0;
+
+  let W = 0, H = 0, unit = 1, scale = 1, small = false, built = false;
+  let S = 128, N = 96, G = 32, IPR = 0, nSparks = 0, nMotes = 0;
+  let sections = [];
+  const tgt = { pts: [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]], focus: 1, intensity: 1, cool: 1, twist: 0.5 };
+  const cur = { pts: null, focus: 1, intensity: 1, cool: 1, twist: 0.5 };
+  const pa = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  const pb = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  const CP = new Float32Array(21);
+  const tmp3 = new Float32Array(3);
+  const mouse = { x: 0.5, y: 0.5, sx: 0.5, sy: 0.5 };
+  let started = false, startAt = 0, introP = reduce ? 1 : 0, last = 0;
+  const t0 = performance.now();
+
+  // frame-rate meter (?fps)
+  let fpsEl = null, frames = 0, fpsStamp = 0, fps = 0, cpuAcc = 0, cpuMs = 0;
+  // adaptive resolution: render fewer pixels if frames keep arriving late
+  let budgetScale = 1, refreshMs = 16.7, emaMs = 16.7, slowFrames = 0, drsHold = 0;
+
+  /* Public API (exists even if WebGL is unavailable) --------------------- */
+  window.BatonStream = {
+    start() {
+      if (started) return;
+      started = true;
+      startAt = performance.now();
+      if (reduce) { introP = 1; requestStatic(); }
+    },
+    measure,
+    stats: () => ({
+      fps: Math.round(fps), jsMs: +cpuMs.toFixed(3), webgl2: gl2, halfFloat, renderScale: +scale.toFixed(2),
+      canvas: [canvas.width, canvas.height], glow: tA ? [tA.w, tA.h] : null, strands: N,
+    }),
+    bench(count = 240) {
+      if (!ready || !computeTarget()) return null;
+      approach(1);
+      const saved = introP;
+      introP = 1;
+      const px = new Uint8Array(4);
+      draw(0);
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      const start = performance.now();
+      for (let i = 0; i < count; i++) {
+        draw(i / 120);
+        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // waits for the GPU
+      }
+      const ms = (performance.now() - start) / count;
+      introP = saved;
+      return { msPerFrame: +ms.toFixed(3), maxFps: Math.round(1000 / ms) };
+    },
+  };
+
