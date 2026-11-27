@@ -80,3 +80,64 @@
     </div>
   </header>
 
+  <main id="main">
+
+    <!-- Hero --------------------------------------------------------------->
+    <section class="hero" id="top" data-stream="hero">
+      <div class="hero__dots" aria-hidden="true"></div>
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          <p class="tag tag--square" data-hero style="--i:0"><i></i>open beta / 260 apps connected</p>
+          <h1 class="hero__title" data-hero style="--i:1">
+            <span class="hero__line">Every handoff,</span>
+            <span class="hero__line"><em>handled.</em></span>
+          </h1>
+          <p class="hero__lede" data-hero style="--i:2">Baton runs the steps between your apps and only taps a person on the shoulder when the call is actually theirs.</p>
+          <div class="hero__ctas" data-hero style="--i:3">
+            <a class="btn btn--lime" href="#start">Start free</a>
+            <a class="btn btn--ghost" href="#how"><svg class="btn__icon" aria-hidden="true"><use href="#i-play" /></svg>Watch a build, 2 min</a>
+          </div>
+          <p class="hero__note mono" data-hero style="--i:4">14 days free / no card / no sales call</p>
+        </div>
+
+        <div class="hero__stage">
+          <div class="glass-wrap">
+            <div class="glass" id="glass" role="img" aria-label="A live workflow: refunds over 5,000 go to finance for a yes, smaller ones are logged straight to the warehouse.">
+              <span class="glass__sheen" aria-hidden="true"></span>
+              <div class="glass__head">
+                <span class="glass__title">Refunds over 5,000</span>
+                <span class="glass__meta mono">3 steps / 1 branch</span>
+                <span class="glass__live mono"><i></i>live</span>
+              </div>
+              <div class="glass__body">
+                <div class="glass__tools">
+                  <span class="is-on"><svg><use href="#i-cursor" /></svg></span>
+                  <span><svg><use href="#i-plus" /></svg></span>
+                  <span><svg><use href="#i-redo" /></svg></span>
+                  <span><svg><use href="#i-code" /></svg></span>
+                </div>
+                <span class="glass__zoom mono">100%</span>
+                <div class="flow" id="flow">
+                  <svg class="flow__edges" id="flowEdges"></svg>
+                  <div class="node" data-node="trigger"><b>Refund created</b><span>stripe</span></div>
+                  <div class="node" data-node="cond"><b>Amount over 5,000</b><span>condition</span></div>
+                  <div class="node" data-node="ask"><b>Ask finance</b><span id="askStatus">waiting on a yes</span></div>
+                  <div class="node" data-node="log"><b>Log to warehouse</b><span id="logStatus">postgres</span></div>
+                  <span class="edge-label mono" data-edge-label="cond-ask">true</span>
+                  <span class="edge-label mono" data-edge-label="cond-log">else</span>
+                  <span class="flow__chip mono" id="flowChip"><svg><use href="#i-clock" /></svg>avg 26 min</span>
+                </div>
+              </div>
+              <div class="glass__runs">
+                <p class="glass__label mono">last runs</p>
+                <ul class="runs" id="runs">
+                  <li><i></i><time class="mono">09:41:02</time><span class="mono">refund #4469</span><span class="runs__dur mono">31 s</span></li>
+                  <li><i></i><time class="mono">09:38:52</time><span class="mono">weekly export</span><span class="runs__dur mono">2.1 s</span></li>
+                  <li><i></i><time class="mono">09:31:14</time><span class="mono">invoice nudge</span><span class="runs__dur mono">410 ms</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
