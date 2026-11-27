@@ -830,3 +830,95 @@ void main() {
     }
   }
 
+  /* Loop -------------------------------------------------------------------- */
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (!ready) return;
+    const begin = performance.now();
+    const interval = last ? now - last : 16.7;
+    const dt = Math.min(0.25, interval / 1000);
+    last = now;
+    if (interval > 2 && interval < 100) {
+      refreshMs = Math.min(interval, refreshMs + 0.002); // tracks the display's refresh interval
+      emaMs += (interval - emaMs) * 0.05;
+      // only when frames are both late for this display and slower than ~87 fps
+      if (emaMs > Math.max(refreshMs * 1.6, 11.5) && scale > 1.01 && now > drsHold) {
+        if (++slowFrames > 120) { budgetScale *= 0.7; slowFrames = 0; drsHold = now + 3000; resize(); }
+      } else if (slowFrames > 0) slowFrames -= 1;
+    }
+    if (!computeTarget()) return;
+    approach(1 - Math.exp(-dt * 4.5));
+    const km = 1 - Math.exp(-dt * 2.5);
+    mouse.sx = lerp(mouse.sx, mouse.x, km);
+    mouse.sy = lerp(mouse.sy, mouse.y, km);
+    if (started) introP = clamp((now - startAt) / 2200, 0, 1);
+    draw((now - t0) / 1000);
+
+    frames += 1;
+    cpuAcc += performance.now() - begin;
+    if (!fpsStamp) fpsStamp = now;
+    if (now - fpsStamp >= 500) {
+      fps = (frames * 1000) / (now - fpsStamp);
+      cpuMs = cpuAcc / frames;
+      frames = 0; cpuAcc = 0; fpsStamp = now;
+      if (fpsEl) fpsEl.textContent = `${Math.round(fps)} fps  ·  stream ${cpuMs.toFixed(2)} ms`;
+    }
+  }
+
+  let staticQueued = false;
+  function requestStatic() {
+    if (staticQueued) return;
+    staticQueued = true;
+    requestAnimationFrame(() => {
+      staticQueued = false;
+      if (!ready || !computeTarget()) return;
+      approach(1);
+      if (!started) return;
+      draw(0);
+    });
+  }
+
+  /* Boot -------------------------------------------------------------------- */
+  try {
+    initGL();
+  } catch (err) {
+    console.warn('[stream] WebGL unavailable, using a static glow instead:', err.message);
+    wrap.classList.add('stream--fallback');
+    return;
+  }
+
+  canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); ready = false; }, false);
+  canvas.addEventListener('webglcontextrestored', () => {
+    try { initGL(); } catch (err) { wrap.classList.add('stream--fallback'); }
+  }, false);
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('load', measure);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  if ('ResizeObserver' in window) {
+    let pending = false;
+    new ResizeObserver(() => {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => { pending = false; measure(); });
+    }).observe(document.body);
+  }
+  window.addEventListener('pointermove', (e) => {
+    if (!W) return;
+    mouse.x = e.clientX / W;
+    mouse.y = e.clientY / H;
+  }, { passive: true });
+
+  if (showFps) {
+    fpsEl = document.createElement('div');
+    fpsEl.className = 'fps-meter';
+    fpsEl.textContent = 'measuring...';
+    document.body.appendChild(fpsEl);
+  }
+
+  if (reduce) window.addEventListener('scroll', requestStatic, { passive: true });
+  else requestAnimationFrame(frame);
+
+  // safety net: if the preloader never hands over, show the stream anyway
+  setTimeout(() => window.BatonStream.start(), 6000);
+})();
