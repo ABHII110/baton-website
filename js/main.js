@@ -447,3 +447,144 @@
     })();
   }
 
+  /* 6. Integrations: a signal hops across the tiles --------------------------- */
+  function initApps() {
+    const row = $('#appsRow');
+    if (!row || reduce) return;
+    const apps = $$('.app', row);
+    let i = -1;
+    loopWhileVisible(row, async () => {
+      i = (i + 1) % (apps.length + 3);
+      apps.forEach((a, j) => { a.classList.toggle('is-on', j === i); a.classList.toggle('is-past', j < i); });
+      await sleep(i >= apps.length ? 650 : 380);
+    });
+  }
+
+  /* 7. Feature visuals --------------------------------------------------------- */
+  ANIMS.trace = (el) => {
+    const rows = $$('.trace__row', el);
+    const status = $('[data-trace-status]', el);
+    const SCALE = 200;
+    // bars get their final width once and grow with a GPU-friendly scaleX
+    rows.forEach((r) => {
+      const start = Number(r.dataset.start);
+      const span = r.hasAttribute('data-wait') ? SCALE - start : Number(r.dataset.dur);
+      const bar = $('.trace__bar', r);
+      bar.style.left = `${(start / SCALE) * 100}%`;
+      bar.style.width = `${(span / SCALE) * 100}%`;
+    });
+    const play = async () => {
+      rows.forEach((r) => { r.classList.remove('is-run', 'is-done', 'is-wait'); $('.trace__bar', r).style.transform = 'scaleX(0)'; $('.trace__ms', r).textContent = '-'; });
+      status.textContent = 'running';
+      status.classList.remove('is-ok');
+      await sleep(500);
+      for (const r of rows) {
+        const bar = $('.trace__bar', r), ms = $('.trace__ms', r);
+        r.classList.add('is-run');
+        if (r.hasAttribute('data-wait')) {
+          r.classList.add('is-wait');
+          ms.textContent = 'waiting';
+          await tween(380, (e) => { bar.style.transform = `scaleX(${e.toFixed(4)})`; });
+          await sleep(1900);
+          r.classList.remove('is-wait');
+          r.classList.add('is-done');
+          ms.textContent = 'yes, 26 s';
+        } else {
+          const dur = Number(r.dataset.dur);
+          await tween(Math.max(320, dur * 8), (e) => {
+            bar.style.transform = `scaleX(${e.toFixed(4)})`;
+            ms.textContent = `${Math.round(dur * e)} ms`;
+          });
+          r.classList.add('is-done');
+        }
+      }
+      status.textContent = 'done';
+      status.classList.add('is-ok');
+      await sleep(2800);
+    };
+    if (reduce) {
+      rows.forEach((r) => {
+        r.classList.add('is-run', 'is-done');
+        $('.trace__bar', r).style.transform = 'none';
+        $('.trace__ms', r).textContent = r.hasAttribute('data-wait') ? 'yes, 26 s' : `${r.dataset.dur} ms`;
+      });
+      status.textContent = 'done';
+      status.classList.add('is-ok');
+      return;
+    }
+    loopWhileVisible(el, play);
+  };
+
+  ANIMS.chat = (el) => {
+    const steps = $$('[data-step]', el);
+    const approve = $('[data-approve]', el);
+    const label = approve ? approve.querySelector('span') : null;
+    const show = (n, on = true) => steps.forEach((s) => { if (Number(s.dataset.step) === n) s.classList.toggle('is-in', on); });
+    const press = (on) => { if (!approve) return; approve.classList.toggle('is-pressed', on); if (label) label.textContent = on ? 'Approved' : 'Approve'; };
+    if (reduce) { show(1); show(3); show(4); press(true); return; }
+    loopWhileVisible(el, async () => {
+      el.classList.add('is-fading');
+      await sleep(420);
+      steps.forEach((s) => s.classList.remove('is-in'));
+      press(false);
+      el.classList.remove('is-fading');
+      await sleep(400);
+      show(1); await sleep(1500);
+      show(2); await sleep(1700);
+      show(2, false); show(3); await sleep(900);
+      press(true); await sleep(900);
+      show(4); await sleep(4200);
+    });
+  };
+
+  ANIMS.iso = (el) => {
+    const svg = $('svg', el);
+    if (!svg) return;
+    const vals = [0.46, 0.58, 0.7, 0.84, 1, 0.32];
+    const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const VW = 560, base = 190, maxH = 128, hw = 30, dd = 15, th = 6;
+    const xs = vals.map((_, i) => 64 + i * ((VW - 128) / (vals.length - 1)));
+    const defs = `<defs>
+      <linearGradient id="isoL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#32372f"/><stop offset="1" stop-color="#121410"/></linearGradient>
+      <linearGradient id="isoR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e211c"/><stop offset="1" stop-color="#090a08"/></linearGradient>
+      <linearGradient id="isoCap" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d5d9cf"/><stop offset="1" stop-color="#7c8178"/></linearGradient>
+      <linearGradient id="isoHL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8db631"/><stop offset="1" stop-color="#3d4f12"/></linearGradient>
+      <linearGradient id="isoHR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5f7c1d"/><stop offset="1" stop-color="#26320a"/></linearGradient>
+    </defs>`;
+    let body = '';
+    vals.forEach((v, i) => {
+      const hot = i === vals.length - 1 ? ' is-hot' : '';
+      body += `<path class="iso__shadow" d="M${xs[i]},${base - dd + 4} L${xs[i] + hw + 10},${base + 4} L${xs[i]},${base + dd + 9} L${xs[i] - hw - 6},${base + 4} Z" opacity=".6"/>`;
+      body += `<g class="prism${hot}"><path class="p-left"/><path class="p-right"/><path class="p-top"/><g class="cap"><path class="c-left"/><path class="c-right"/><path class="c-top"/></g></g>`;
+      body += `<text class="iso__day${hot}" x="${xs[i]}" y="${base + dd + 36}">${days[i]}</text>`;
+    });
+    svg.innerHTML = defs + body;
+    const groups = $$('.prism', svg);
+    const P = (pts) => `M${pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L')} Z`;
+    const set = (i, h, lift) => {
+      const g = groups[i], cx = xs[i], by = base, ty = by - h;
+      g.children[0].setAttribute('d', P([[cx - hw, ty], [cx, ty + dd], [cx, by + dd], [cx - hw, by]]));
+      g.children[1].setAttribute('d', P([[cx, ty + dd], [cx + hw, ty], [cx + hw, by], [cx, by + dd]]));
+      g.children[2].setAttribute('d', P([[cx, ty - dd], [cx + hw, ty], [cx, ty + dd], [cx - hw, ty]]));
+      const cy = ty - lift;
+      const cap = g.children[3].children;
+      cap[0].setAttribute('d', P([[cx - hw, cy - th], [cx, cy - th + dd], [cx, cy + dd], [cx - hw, cy]]));
+      cap[1].setAttribute('d', P([[cx, cy - th + dd], [cx + hw, cy - th], [cx + hw, cy], [cx, cy + dd]]));
+      cap[2].setAttribute('d', P([[cx, cy - th - dd], [cx + hw, cy - th], [cx, cy - th + dd], [cx - hw, cy - th]]));
+    };
+    if (reduce) { vals.forEach((v, i) => set(i, v * maxH, 0)); return; }
+    vals.forEach((v, i) => set(i, 3, 56));
+    const t0 = performance.now();
+    const tick = (now) => {
+      let running = false;
+      vals.forEach((v, i) => {
+        const a = clamp((now - t0 - i * 140) / 1100);
+        const b = clamp((now - t0 - i * 140 - 520) / 900);
+        if (a < 1 || b < 1) running = true;
+        set(i, Math.max(3, v * maxH * ease.outCubic(a)), Math.max(-3, 56 * (1 - ease.outBack(b))));
+      });
+      if (running) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+
