@@ -271,3 +271,58 @@
         </div>
       </div>
     </section>
+
+    <!-- Reliability -------------------------------------------------------->
+    <section class="section" id="reliability" data-stream="reliability">
+      <div class="container">
+        <header class="section__head">
+          <div>
+            <p class="tag" data-reveal><i></i>reliability</p>
+            <h2 class="h2" data-split><em>Boring,</em> in all the right places.</h2>
+          </div>
+          <p class="section__lede" data-reveal data-delay="150">Credentials, retries, rate limits, residency. The parts nobody demos, and the parts that decide whether you sleep.</p>
+        </header>
+
+        <div class="duo">
+          <article class="panel card" data-reveal>
+            <h3>One runtime for every app</h3>
+            <p>Baton holds the credentials, retries and rate limits, so a step behaves the same on Stripe as on the internal API you shipped last week.</p>
+            <p class="card__mono mono" data-type>one runtime / every connection</p>
+            <div class="hub-wrap" aria-hidden="true">
+              <svg class="hub" viewBox="0 0 440 190">
+                <defs>
+                  <radialGradient id="hubGlow"><stop offset="0" stop-color="#c2f249" stop-opacity=".45" /><stop offset="1" stop-color="#c2f249" stop-opacity="0" /></radialGradient>
+                </defs>
+                <g class="hub__lines">
+                  <path d="M60 104 H188" /><path d="M136 40 L196 82" /><path d="M304 40 L244 82" /><path d="M380 104 H252" />
+                </g>
+                <circle cx="220" cy="104" r="70" fill="url(#hubGlow)" />
+                <rect x="188" y="72" width="64" height="64" rx="18" class="hub__core" />
+                <use href="#glyph" x="202" y="86" width="36" height="36" class="hub__glyph" />
+                <g class="sat"><circle cx="40" cy="104" r="18" /><text x="40" y="108">SL</text><text class="sat__name" x="40" y="140">slack</text></g>
+                <g class="sat"><circle cx="122" cy="30" r="18" /><text x="122" y="34">ST</text><text class="sat__name" x="122" y="66">stripe</text></g>
+                <g class="sat"><circle cx="318" cy="30" r="18" /><text x="318" y="34">PG</text><text class="sat__name" x="318" y="66">postgres</text></g>
+                <g class="sat"><circle cx="400" cy="104" r="18" /><text x="400" y="108">HS</text><text class="sat__name" x="400" y="140">hubspot</text></g>
+              </svg>
+              <i class="hub__dot" style="--x1:60;--y1:104;--x2:188;--y2:104;--dur:2.4s;--del:0s"></i>
+              <i class="hub__dot" style="--x1:196;--y1:82;--x2:136;--y2:40;--dur:2.8s;--del:-1s"></i>
+              <i class="hub__dot" style="--x1:304;--y1:40;--x2:244;--y2:82;--dur:2.2s;--del:-.4s"></i>
+              <i class="hub__dot" style="--x1:252;--y1:104;--x2:380;--y2:104;--dur:2.6s;--del:-1.6s"></i>
+            </div>
+            <p class="card__foot mono"><span data-type>credentials / retries / rate limits / replay</span></p>
+          </article>
+
+          <article class="panel card" data-reveal data-delay="120">
+            <h3>Runs where your data lives</h3>
+            <p>Pick Frankfurt, Virginia or Sydney. Payloads and logs stay in the region you chose, and the audit trail proves it.</p>
+            <p class="card__mono mono" data-type>where runs executed / last 24 h</p>
+            <div class="regions" data-anim="regions">
+              <div class="region is-hot" style="--v:.46"><div class="region__id"><span class="mono">eu-central-1</span><span>Frankfurt</span></div><div class="region__track"><span class="region__fill"></span></div><span class="region__pct mono">46%</span></div>
+              <div class="region" style="--v:.38"><div class="region__id"><span class="mono">us-east-1</span><span>Virginia</span></div><div class="region__track"><span class="region__fill"></span></div><span class="region__pct mono">38%</span></div>
+              <div class="region" style="--v:.16"><div class="region__id"><span class="mono">ap-southeast-2</span><span>Sydney</span></div><div class="region__track"><span class="region__fill"></span></div><span class="region__pct mono">16%</span></div>
+            </div>
+            <p class="card__foot mono"><svg><use href="#i-lock" /></svg><span data-type>a payload never leaves its region</span></p>
+          </article>
+        </div>
+      </div>
+    </section>
